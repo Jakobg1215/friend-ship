@@ -18,12 +18,9 @@
         "package-lock.json"
     ],
     "license": "ISC",
-    "dependencies": {
-        "@jsprismarine/brigadier": "^0.2.0-rc.1",
-        "@jsprismarine/prismarine": "^0.1.0-rc.31",
-        "fs": "^0.0.1-security"
-    },
+    "dependencies": {},
     "devDependencies": {
+        "@jsprismarine/prismarine": "^0.1.0-rc.33",
         "@vercel/ncc": "0.27.0",
         "npm-pack-zip": "1.2.7",
         "renamer": "2.0.1"
