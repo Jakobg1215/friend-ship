@@ -1,0 +1,31 @@
+{
+    "name": "friend-ship",
+    "version": "1.0.0",
+    "description": "",
+    "main": "./dist/index.js",
+    "scripts": {
+        "build": "ncc build ./index.ts -o ./dist/ --minify --no-cache",
+        "archive": "npm-pack-zip",
+        "postarchive": "renamer --find zip --replace jspz *"
+    },
+    "prismarine": {
+        "apiVersion": "1.0",
+        "displayName": "Friend Ship"
+    },
+    "files": [
+        "dist/**/*",
+        "package.json",
+        "package-lock.json"
+    ],
+    "license": "ISC",
+    "dependencies": {
+        "@jsprismarine/brigadier": "^0.2.0-rc.1",
+        "@jsprismarine/prismarine": "^0.1.0-rc.31",
+        "fs": "^0.0.1-security"
+    },
+    "devDependencies": {
+        "@vercel/ncc": "0.27.0",
+        "npm-pack-zip": "1.2.7",
+        "renamer": "2.0.1"
+    }
+}
