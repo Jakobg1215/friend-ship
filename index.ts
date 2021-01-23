@@ -1,11 +1,9 @@
-// @ts-nocheck
+import { CommandContext, CommandDispatcher, argument, literal, string } from "@jsprismarine/brigadier";
 
-import fs from "fs";
-import { argument, CommandContext, CommandDispatcher, literal, string } from "@jsprismarine/brigadier";
+import type ChatEvent from "@jsprismarine/prismarine/dist/src/events/chat/ChatEvent";
+import type Player from "@jsprismarine/prismarine/dist/src/player/Player";
 import type PluginApi from "@jsprismarine/prismarine/dist/src/plugin/api/versions/1.0/PluginApi";
-import Player from "@jsprismarine/prismarine/dist/src/player/Player";
-import Command from "@jsprismarine/prismarine/dist/src/command/Command";
-import ChatEvent from "@jsprismarine/prismarine/dist/src/events/chat/ChatEvent";
+import fs from "fs";
 
 export default class PluginBase {
     public api: PluginApi;
@@ -51,31 +49,28 @@ export default class PluginBase {
     public async onDisable() { }
 
     private async registerCommands() {
-        await this.api.getServer().getCommandManager().registerClassCommand(new class FriendCommand extends Command {
-            public constructor() {
-                super({
-                    id: "friends:friend",
-                    description: "Add or remove a friend from your friend list.",
-                    permission: "friends.command.friend",
-                    aliases: ["f"]
-                });
-            }
-
-            public async register(dispatcher: CommandDispatcher<any>) {
+        await this.api.getServer().getCommandManager().registerClassCommand({
+            id: "friends:friend",
+            description: "Add or remove a friend from your friend list.",
+            permission: "friends.command.friend",
+            aliases: ["f"],
+            register: async (dispatcher: CommandDispatcher<any>) => {
                 dispatcher.register(
                     literal("friend").then(
                         argument("edit", string()).executes(async (context: CommandContext<any>) => {
                             const edit = context.getArgument("edit");
                             const sender = context.getSource() as Player;
 
-                            if (edit === "add" || edit === "remove") return await sender.sendMessage("§cNeed to specify a player!");
+                            if (edit === "add" || edit === "remove")
+                                return await sender.sendMessage("§cNeed to specify a player!");
 
                             if (edit === "list") {
 
                                 let file: any[];
                                 try {
                                     const path = `./plugins/friend-ship/friends/${sender.getXUID()}.json`;
-                                    if (!fs.existsSync(path)) fs.writeFileSync(path, "[]");
+                                    if (!fs.existsSync(path))
+                                        fs.writeFileSync(path, "[]");
                                     file = JSON.parse(fs.readFileSync(path, "utf8"));
                                 } catch (error) {
                                     return await sender.sendMessage("§cYou have no friends! :(");
@@ -89,24 +84,25 @@ export default class PluginBase {
 
                                     if (!target) {
                                         if (count < 8) {
-                                            message = `${message} §c${user["username"]}§r`
+                                            message = `${message} §c${user["username"]}§r`;
                                             count++;
                                         } else {
-                                            message = `${message} §c${user["username"]}§r\n`
+                                            message = `${message} §c${user["username"]}§r\n`;
                                             count = 0;
                                         }
                                     } else {
                                         if (count < 8) {
-                                            message = `${message} §a${user["username"]}§r`
+                                            message = `${message} §a${user["username"]}§r`;
                                             count++;
                                         } else {
-                                            message = `${message} §a${user["username"]}§r\n`
+                                            message = `${message} §a${user["username"]}§r\n`;
                                             count = 0;
                                         }
                                     }
                                 }
-                                if (message.length === 0) { return await sender.sendMessage("§cYou have no friends! :(") }
-                                else return await sender.sendMessage(message);
+                                if (message.length === 0) { return await sender.sendMessage("§cYou have no friends! :("); }
+                                else
+                                    return await sender.sendMessage(message);
                             }
 
                             return await sender.sendMessage(`§c${edit} is not a valid argument!`);
@@ -122,16 +118,20 @@ export default class PluginBase {
                                     return await sender.sendMessage(`§cCan't find the player ${player}!`);
                                 }
 
-                                if (!sender.isPlayer()) return await sender.sendMessage("§cYou can't run this in the console");
-                                if (sender.getName() === target.getName()) return await sender.sendMessage("§cCan't add/remove your self as a friend!");
+                                if (!sender.isPlayer())
+                                    return await sender.sendMessage("§cYou can't run this in the console");
+                                if (sender.getName() === target.getName())
+                                    return await sender.sendMessage("§cCan't add/remove yourself as a friend!");
 
                                 const path = `./plugins/friend-ship/friends/${sender.getXUID()}.json`;
-                                if (!fs.existsSync(path)) fs.createWriteStream(path).write("[]");
+                                if (!fs.existsSync(path))
+                                    fs.createWriteStream(path).write("[]");
                                 const file: any[] = JSON.parse(fs.readFileSync(path, "utf8"));
 
                                 if (edit === "add") {
                                     for (const user of file) {
-                                        if (user["xuid"] === target.getXUID()) return await sender.sendMessage(`You already have ${target.getName()} as a friend!`);
+                                        if (user["xuid"] === target.getXUID())
+                                            return await sender.sendMessage(`You already have ${target.getName()} as a friend!`);
                                     }
 
                                     file.push({ "username": target.getName(), "xuid": target.getXUID() });
@@ -144,9 +144,11 @@ export default class PluginBase {
                                 if (edit === "remove") {
                                     let found = false;
                                     for (const user of file) {
-                                        if (user["xuid"] === target.getXUID()) found = true;
+                                        if (user["xuid"] === target.getXUID())
+                                            found = true;
                                     }
-                                    if (!found) return await sender.sendMessage(`${target.getName()} is not on your friend list!`);
+                                    if (!found)
+                                        return await sender.sendMessage(`${target.getName()} is not on your friend list!`);
 
                                     const remove = file.map(function (item) { return item.xuid; }).indexOf(target.getXUID());
                                     file.splice(remove, 1);
@@ -161,6 +163,6 @@ export default class PluginBase {
                     )
                 );
             }
-        }, this.api.getServer());
+        } as any);
     }
 }
