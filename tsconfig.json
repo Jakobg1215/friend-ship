@@ -1,10 +1,16 @@
 {
     "compilerOptions": {
-        "target": "es2015",
+        "outDir": "./dist",
+        "target": "es2020",
+        "module": "commonjs",
         "moduleResolution": "node",
+        "allowJs": true,
         "strict": true,
         "resolveJsonModule": true,
         "esModuleInterop": true,
         "skipLibCheck": false
-    }
+    },
+    "include": [
+        "index.ts"
+    ]
 }
