@@ -21,5 +21,8 @@
         "@jsprismarine/prismarine": "^0.1.0-rc.34",
         "npm-pack-zip": "1.2.7",
         "renamer": "2.0.1"
+    },
+    "dependencies": {
+        "@jsprismarine/brigadier": "^0.2.0-rc.1"
     }
 }
