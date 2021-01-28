@@ -42,33 +42,47 @@ export default class PluginBase {
                             if (!sender.isPlayer()) return await sender.sendMessage("§cThis command can only be used by a player!");
                             const edit = context.getArgument("edit");
 
-                            if (edit.toLowerCase() === "add" || edit.toLowerCase() === "remove") return await sender.sendMessage(`§c${edit} requires a player argument!`);
-
-                            const friends = this.api.getConfigBuilder("friends.json");
-                            const friendslist: any[] = friends.get(sender.getXUID(), []);
-                            if (friendslist.length === 0) return await sender.sendMessage("§cYou have no friends! :(");
                             const line = "§9§l-----------------------------------------------------§r";
-                            // TODO: Make this into a switch when adding more.
-                            if (edit.toLowerCase() === "list") {
-                                let players = "";
-                                const page = 1;
-                                for (const user of friendslist) { // TODO: Make the pages only show 8 players instead of all of them.
-                                    const target = sender.getServer().getPlayerManager().getOnlinePlayers().find(player => player.getXUID() === user.xuid);
-                                    target ? players = players + `§7${target.getName()}§a is currently online\n` : players = players + `§7${user.name}§c is currently online\n`;
-                                }
-                                const pageamount = Math.floor(friendslist.length / 9) + 1;
-                                return await sender.sendMessage(`${line}\n                  §6Friends (Page ${page} of ${pageamount})§r\n${players}${line}`);
+
+                            switch (edit.toLowerCase()) {
+                                case "add":
+                                case "remove":
+                                    return await sender.sendMessage(`${line}\n§cInvalid usage! Valid usage: /friend add Player\n${line}`);
+                                case "l":
+                                case "list":
+                                    const friends = this.api.getConfigBuilder("friends.json");
+                                    const friendslist: any[] = friends.get(sender.getXUID(), []);
+
+                                    let players = "";
+                                    const page = 1;
+                                    for (const user of friendslist) { // TODO: Make the pages only show 8 players instead of all of them.
+                                        const target = sender.getServer().getPlayerManager().getOnlinePlayers().find(player => player.getXUID() === user.xuid);
+                                        target ? players = players + `§7${target.getName()}§a is currently online\n` : players = players + `§7${user.name}§c is currently online\n`;
+                                    }
+                                    const pageamount = Math.floor(friendslist.length / 9) + 1;
+                                    return await sender.sendMessage(`${line}\n                  §6Friends (Page ${page} of ${pageamount})§r\n${players}${line}`);
+                                case "h":
+                                case "help":
+                                    let commandlist: string[] = [];
+                                    commandlist.push("§e/f add Player§7 - §bAdd a player as a friend§r\n");
+                                    commandlist.push("§e/f help§7 - §bPrints all available friend commands.\n");
+                                    commandlist.push("§e/f notifications§7 - §bToggle friend join/leave notifications\n");
+                                    commandlist.push("§e/f remove Player§7 - §bRemove a player from your friend§r");
+                                    return await sender.sendMessage(`${line}\n${commandlist.join("")}\n${line}`);
+                                case "n":
+                                case "notifications":
+                                    const usersettings = this.api.getConfigBuilder("usersettings.json");
+                                    const settings: any = usersettings.get(sender.getXUID(), { notifications: true });
+                                    if (settings.notifications) {
+                                        usersettings.set(sender.getXUID(), { notifications: false });
+                                        return await sender.sendMessage(`${line}\n§eDisabled friend join/leave notifications!\n${line}`);
+                                    } else {
+                                        usersettings.set(sender.getXUID(), { notifications: true });
+                                        return await sender.sendMessage(`${line}\n§eEnabled friend join/leave notifications!\n${line}`);
+                                    }
+                                default:
+                                    return await sender.sendMessage(`§c${edit} is not a valid argument!`);
                             }
-
-                            if (edit.toLowerCase() === "help") { // TODO: Add all the command arguments to help when they are added.
-                                const addCommand = "§e/f add Player§7 - §bAdd a player as a friend§r";
-                                const helpCommand = "§e/f help§7 - §bPrints all available friend commands."
-                                const removeCommand = "§e/f add Player§7 - §bRemove a player from your friend§r";
-
-                                return await sender.sendMessage(`${line}\n${addCommand}\n${helpCommand}\n${removeCommand}\n${line}`);
-                            }
-
-                            return await sender.sendMessage(`§c${edit} is not a valid argument!`);
                         }).then(
                             argument("player", string()).executes(async (context: CommandContext<any>) => {
                                 const sender = context.getSource() as Player;
@@ -80,7 +94,7 @@ export default class PluginBase {
                                 try {
                                     target = this.api.getServer().getPlayerManager().getPlayerByExactName(player);
                                 } catch (error) {
-                                    return await sender.sendMessage(`§c${player} is not online or doen't exist!`);
+                                    return await sender.sendMessage(`§cNo player found with name ${player}`);
                                 }
 
                                 //if (sender.getName() === target.getName()) return await sender.sendMessage("§cYou can't add yourself as a friend!");
