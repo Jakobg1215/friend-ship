@@ -48,20 +48,20 @@ export default class PluginBase {
                                 case "add":
                                 case "remove":
                                     return await sender.sendMessage(`${line}\n§cInvalid usage! Valid usage: /friend add Player\n${line}`);
-                                case "l":
                                 case "list":
                                     const friends = this.api.getConfigBuilder("friends.json");
                                     const friendslist: any[] = friends.get(sender.getXUID(), []);
 
-                                    let players = "";
+                                    if (friendslist.length === 0) return await sender.sendMessage(`${line}\n§eYou don't have any friends yet! Add some with /friend add Player\n${line}`)
+
+                                    const players: string[] = [];
                                     const page = 1;
                                     for (const user of friendslist) { // TODO: Make the pages only show 8 players instead of all of them.
                                         const target = sender.getServer().getPlayerManager().getOnlinePlayers().find(player => player.getXUID() === user.xuid);
-                                        target ? players = players + `§7${target.getName()}§a is currently online\n` : players = players + `§7${user.name}§c is currently online\n`;
+                                        target ? players.push(`§7${target.getName()}§a is currently online\n`) : players.push(`§7${user.name}§c is currently online\n`);
                                     }
                                     const pageamount = Math.floor(friendslist.length / 9) + 1;
-                                    return await sender.sendMessage(`${line}\n                  §6Friends (Page ${page} of ${pageamount})§r\n${players}${line}`);
-                                case "h":
+                                    return await sender.sendMessage(`${line}\n                  §6Friends (Page ${page} of ${pageamount})§r\n${players.join("")}${line}`);
                                 case "help":
                                     const commandlist: string[] = [];
                                     commandlist.push("§e/f add Player§7 - §bAdd a player as a friend§r\n");
@@ -94,27 +94,27 @@ export default class PluginBase {
                                 try {
                                     target = this.api.getServer().getPlayerManager().getPlayerByExactName(player);
                                 } catch (error) {
-                                    return await sender.sendMessage(`§cNo player found with name ${player}`);
+                                    if (edit !== "remove") return await sender.sendMessage(`§cNo player found with name ${player}`);
                                 }
+
 
                                 //if (sender.getName() === target.getName()) return await sender.sendMessage("§cYou can't add yourself as a friend!");
                                 if (edit.toLowerCase() !== "add" && edit.toLowerCase() !== "remove") return await sender.sendMessage(`§c${edit} is not a valid argument!`);
 
                                 const friends = this.api.getConfigBuilder("friends.json");
-                                let friendslist: any[] = friends.get(sender.getXUID(), [{ name: target.getName(), xuid: target.getXUID() }]);
+                                const friendslist: any[] = friends.get(sender.getXUID(), [{ name: target!?.getName(), xuid: target!?.getXUID() }]);
 
                                 // TODO: Make this into a switch when adding more.
                                 if (edit.toLowerCase() === "add") { // TODO: Make theses request to the target.
-                                    if (friendslist.find(predicate => predicate.xuid === target.getXUID())) return await sender.sendMessage(`§c${target.getName()} is already on your friends list!`);
-                                    friendslist.push({ name: target.getName(), xuid: target.getXUID() });
+                                    if (friendslist.find(predicate => predicate.xuid === target.getXUID())) return await sender.sendMessage(`§c${target!.getName()} is already on your friends list!`);
+                                    friendslist.push({ name: target!.getName(), xuid: target!.getXUID() });
                                     friends.set(sender.getXUID(), friendslist);
-                                    return await sender.sendMessage(`§aAdded ${target.getName()} to your friends list!`);
+                                    return await sender.sendMessage(`§aAdded ${target!.getName()} to your friends list!`);
                                 }
                                 else {
-                                    if (!friendslist.find(predicate => predicate.xuid === target.getXUID())) return await sender.sendMessage(`§c${target.getName()} is not on your friends list!`);
-                                    friendslist = friendslist.filter(predicate => predicate.xuid !== target.getXUID());
-                                    friends.set(sender.getXUID(), friendslist);
-                                    return await sender.sendMessage(`§aRemoved ${target.getName()} from your friends list!`);
+                                    if (!friendslist.find(predicate => predicate.name === player)) return await sender.sendMessage(`§c${player} is not on your friends list!`);
+                                    friends.set(sender.getXUID(), friendslist.filter(predicate => predicate.name !== player));
+                                    return await sender.sendMessage(`§aRemoved ${player} from your friends list!`);
                                 }
                             })
                         )
