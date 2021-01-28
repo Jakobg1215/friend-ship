@@ -63,11 +63,11 @@ export default class PluginBase {
                                     return await sender.sendMessage(`${line}\n                  §6Friends (Page ${page} of ${pageamount})§r\n${players}${line}`);
                                 case "h":
                                 case "help":
-                                    let commandlist: string[] = [];
+                                    const commandlist: string[] = [];
                                     commandlist.push("§e/f add Player§7 - §bAdd a player as a friend§r\n");
                                     commandlist.push("§e/f help§7 - §bPrints all available friend commands.\n");
                                     commandlist.push("§e/f notifications§7 - §bToggle friend join/leave notifications\n");
-                                    commandlist.push("§e/f remove Player§7 - §bRemove a player from your friend§r");
+                                    commandlist.push("§e/f remove Player§7 - §bRemove a player from your friends§r");
                                     return await sender.sendMessage(`${line}\n${commandlist.join("")}\n${line}`);
                                 case "n":
                                 case "notifications":
