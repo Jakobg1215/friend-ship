@@ -16,7 +16,7 @@
         "package.json",
         "package-lock.json"
     ],
-    "license": "ISC",
+    "license": "MIT",
     "devDependencies": {
         "@jsprismarine/prismarine": "^0.1.0-rc.34",
         "npm-pack-zip": "1.2.7",
