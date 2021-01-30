@@ -1,5 +1,6 @@
 /node_modules/
 /dist/
 friends.json
-usersettings.json
+fsettings.json
+requests.json
 friend-ship.jspz
