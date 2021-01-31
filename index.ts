@@ -48,9 +48,11 @@ export default class PluginBase {
                             const line = "§9§l-----------------------------------------------------§r";
 
                             switch (edit.toLowerCase()) {
+                                case "accept":
                                 case "add":
+                                case "deny":
                                 case "remove":
-                                    return await sender.sendMessage(`${line}\n§cInvalid usage! Valid usage: /friend add Player\n${line}`);
+                                    return await sender.sendMessage(`${line}\n§cInvalid usage! Valid usage: /friend ${edit} Player\n${line}`);
                                 case "list":
                                     const friends = this.api.getConfigBuilder("friends.json");
                                     const friendslist: any[] = friends.get(sender.getXUID(), []);
@@ -68,7 +70,9 @@ export default class PluginBase {
                                     return await sender.sendMessage(`${line}\n                  §6Friends (Page ${page} of ${pageamount})§r\n${players.join("")}${line}`);
                                 case "help":
                                     const commandlist: string[] = [];
+                                    commandlist.push("§e/f accept Player§7 - §bAccept a friend request§r\n");
                                     commandlist.push("§e/f add Player§7 - §bAdd a player as a friend§r\n");
+                                    commandlist.push("§e/f deny Player§7 - §bDecline a friend request§r\n");
                                     commandlist.push("§e/f help§7 - §bPrints all available friend commands.\n");
                                     commandlist.push("§e/f notifications§7 - §bToggle friend join/leave notifications\n");
                                     commandlist.push("§e/f remove Player§7 - §bRemove a player from your friends§r");
@@ -106,40 +110,46 @@ export default class PluginBase {
                                 const line = "§9§l-----------------------------------------------------§r";
                                 //if (sender.getName() === target!?.getName())
                                 //return await sender.sendMessage(`${line}\n§cYou can't add yourself as a friend!\n${line}`);
-                                if (edit.toLowerCase() !== "add" && edit.toLowerCase() !== "remove")
-                                    return await sender.sendMessage(`§c${edit} is not a valid argument!`);
                                 const friends = this.api.getConfigBuilder("friends.json");
                                 const friendslist: any[] = friends.get(sender.getXUID(), [{ name: target!?.getName(), xuid: target!?.getXUID() }]);
                                 const requests = this.api.getConfigBuilder("requests.json");
                                 const requestslist: any[] = requests.get("list", []);
 
-                                // TODO: Make this into a switch when adding more.
-                                if (edit.toLowerCase() === "add") { // TODO: Make theses request to the target.
-                                    if (friendslist.find(predicate => predicate.xuid === target.getXUID()))
-                                        return await sender.sendMessage(`§c${target!.getName()} is already on your friends list!`);
-                                    if (requestslist.find(predicate => predicate.to === target.getName()))
-                                        return await sender.sendMessage(`§c${target!.getName()} is already on your friends list!`);
-                                    requestslist.push({
-                                        to: target!.getName(),
-                                        from: sender.getName(),
-                                        time: Date.now()
-                                    });
-                                    requests.set("list", requestslist);
-                                    await target!.sendMessage(``);
-                                    return await sender.sendMessage(``);
-                                    /*
-                                    friendslist.push({ name: target!.getName(), xuid: target!.getXUID() });
-                                    friends.set(sender.getXUID(), friendslist);
-                                    return await sender.sendMessage(`${line}\n§aYou are now friends with§7 ${target!.getName()}\n${line}`);
-                                    */
-                                }
-                                else {
-                                    if (!friendslist.find(predicate => predicate.name === player))
-                                        return await sender.sendMessage(`§c${player} is not on your friends list!`);
-                                    friends.set(sender.getXUID(), friendslist.filter(predicate => predicate.name !== player));
-                                    if (target!)
-                                        await target.sendMessage(`${line}\n§7${sender.getName()}§e removed you from their friends list!\n${line}`);
-                                    return await sender.sendMessage(`${line}\n§eYou removed§7 ${player}§e from your friends list!\n${line}`);
+                                switch (edit.toLowerCase()) {
+                                    case "accept":
+                                        if (!requestslist.find(predicate => predicate.to === target.getName()))
+                                            return await sender.sendMessage(`${line}\n§cThat person hasn't invited you to be friends! Try§e /friend ${target!.getName()}\n${line}`);
+                                        friends.set(sender.getXUID(), friendslist.filter(predicate => predicate.name !== target!.getName()));
+                                        friendslist.push({ name: target!.getName(), xuid: target!.getXUID() });
+                                        friends.set(sender.getXUID(), friendslist);
+                                        return await sender.sendMessage(`${line}\n§aYou are now friends with§7 ${target!.getName()}\n${line}`);
+                                    case "add":
+                                        if (friendslist.find(predicate => predicate.xuid === target.getXUID()))
+                                            return await sender.sendMessage(`§c${target!.getName()} is already on your friends list!`);
+                                        if (requestslist.find(predicate => predicate.to === target.getName()))
+                                            return await sender.sendMessage(`§c${target!.getName()} is already on your friends list!`);
+                                        requestslist.push({
+                                            to: target!.getName(),
+                                            from: sender.getName(),
+                                            time: Date.now()
+                                        });
+                                        requests.set("list", requestslist);
+                                        await target!.sendMessage(`${line}\n${line}`);
+                                        return await sender.sendMessage(`${line}\n${line}`);
+                                    case "deny":
+                                        if (!requestslist.find(predicate => predicate.to === target.getName()))
+                                            return await sender.sendMessage(`${line}\n§cThat person hasn't invited you to be friends! Try§e /friend ${target!.getName()}\n${line}`);
+                                        requests.set("list", requestslist.filter(predicate => predicate.from !== target!.getName()));
+                                        return await sender.sendMessage(` `);
+                                    case "remove":
+                                        if (!friendslist.find(predicate => predicate.name === player))
+                                            return await sender.sendMessage(`§c${player} is not on your friends list!`);
+                                        friends.set(sender.getXUID(), friendslist.filter(predicate => predicate.name !== player));
+                                        if (target!)
+                                            await target.sendMessage(`${line}\n§7${sender.getName()}§e removed you from their friends list!\n${line}`);
+                                        return await sender.sendMessage(`${line}\n§eYou removed§7 ${player}§e from your friends list!\n${line}`);
+                                    default:
+                                        return await sender.sendMessage(`§c${edit} is not a valid argument!`);
                                 }
                             })
                         )
@@ -151,12 +161,15 @@ export default class PluginBase {
         setInterval(() => {
             const requests = this.api.getConfigBuilder("requests.json");
             const requestslist: any[] = requests.get("list", []);
-            requestslist.forEach((req) => {
+            requestslist.forEach(async (req) => {
                 if ((Date.now() - req.time) >= 60000) {
+                    await this.api.getServer().getPlayerManager().getPlayerByExactName(req.from)?.sendMessage(` `);
                     requests.set("list", requestslist.filter(predicate => predicate.name !== req.name));
                 }
             });
         }, 50);
     }
-    public async onDisable() { }
+    public async onDisable() {
+        this.api.getConfigBuilder("requests.json").set("list", []);
+    }
 }
