@@ -13,19 +13,16 @@ export default class PluginBase {
             if (message.startsWith("§e") && message.endsWith("game")) {
                 const joiner = event.getChat().getSender().getServer().getPlayerManager().getPlayerByExactName(message.split(" ", 1)[0].slice(2));
                 const type = message.split(" ", 2)[1];
-
                 if (type !== "joined" && type !== "left")
                     return;
                 event.preventDefault();
-
                 joiner.getServer().getPlayerManager().getOnlinePlayers().forEach(async Player => {
                     for (const user of this.api.getConfigBuilder("friends.json").get(joiner.getXUID(), [])) {
                         if (Player.getXUID() === user.xuid) {
-
                             if (type === "joined") {
-                                await Player.sendMessage(`§a${joiner.getName()} has joined the server!`);
+                                await Player.sendMessage(`§aFriendship > ${joiner.getName()} has joined the server!`);
                             } else
-                                await Player.sendMessage(`§a${joiner.getName()} has left the server!`);
+                                await Player.sendMessage(`§aFriendship > ${joiner.getName()} has left the server!`);
                         }
                     }
                 });
@@ -44,9 +41,7 @@ export default class PluginBase {
                             if (!sender.isPlayer())
                                 return await sender.sendMessage("§cThis command can only be used by a player!");
                             const edit = context.getArgument("edit");
-
                             const line = "§9§l-----------------------------------------------------§r";
-
                             switch (edit.toLowerCase()) {
                                 case "accept":
                                 case "add":
@@ -54,12 +49,9 @@ export default class PluginBase {
                                 case "remove":
                                     return await sender.sendMessage(`${line}\n§cInvalid usage! Valid usage: /friend ${edit} Player\n${line}`);
                                 case "list":
-                                    const friends = this.api.getConfigBuilder("friends.json");
-                                    const friendslist: any[] = friends.get(sender.getXUID(), []);
-
+                                    const friendslist: any[] = this.api.getConfigBuilder("friends.json").get(sender.getXUID(), []);
                                     if (friendslist.length === 0)
                                         return await sender.sendMessage(`${line}\n§eYou don't have any friends yet! Add some with /friend add Player\n${line}`);
-
                                     const players: string[] = [];
                                     const page = 1;
                                     for (const user of friendslist) { // TODO: Make the pages only show 8 players instead of all of them.
@@ -89,14 +81,28 @@ export default class PluginBase {
                                         return await sender.sendMessage(`${line}\n§eEnabled friend join/leave notifications!\n${line}`);
                                     }
                                 default:
-                                    return await sender.sendMessage(`§c${edit} is not a valid argument!`);
+                                    let target: Player;
+                                    try {
+                                        target = this.api.getServer().getPlayerManager().getPlayerByExactName(edit);
+                                    } catch (error) {
+                                        return await sender.sendMessage(`§cNo player found with name ${edit}`);
+                                    }
+                                    const requests = this.api.getConfigBuilder("requests.json");
+                                    const requestslist: any[] = requests.get("list", []);
+                                    const friend = this.api.getConfigBuilder("friends.json");
+                                    const friends: any[] = friend.get(sender.getXUID(), [{ name: target?.getName(), xuid: target?.getXUID() }]);
+                                    if (!requestslist.find(predicate => predicate.to === target.getName()))
+                                        return await sender.sendMessage(`${line}\n§cThat person hasn't invited you to be friends! Try§e /friend ${target.getName()}\n${line}`);
+                                    friend.set(sender.getXUID(), friends.filter(predicate => predicate.name !== target.getName()));
+                                    friends.push({ name: target.getName(), xuid: target.getXUID() });
+                                    friend.set(sender.getXUID(), friends);
+                                    return await sender.sendMessage(`${line}\n§aYou are now friends with§7 ${target.getName()}\n${line}`);
                             }
                         }).then(
                             argument("player", string()).executes(async (context: CommandContext<any>) => {
                                 const sender = context.getSource() as Player;
                                 if (!sender.isPlayer())
                                     return await sender.sendMessage("§cThis command can only be used by a player!");
-
                                 const edit = context.getArgument("edit");
                                 const player = context.getArgument("player");
                                 let target: Player;
@@ -106,7 +112,6 @@ export default class PluginBase {
                                     if (edit !== "remove")
                                         return await sender.sendMessage(`§cNo player found with name ${player}`);
                                 }
-
                                 const line = "§9§l-----------------------------------------------------§r";
                                 //if (sender.getName() === target!?.getName())
                                 //return await sender.sendMessage(`${line}\n§cYou can't add yourself as a friend!\n${line}`);
@@ -114,7 +119,6 @@ export default class PluginBase {
                                 const friendslist: any[] = friends.get(sender.getXUID(), [{ name: target!?.getName(), xuid: target!?.getXUID() }]);
                                 const requests = this.api.getConfigBuilder("requests.json");
                                 const requestslist: any[] = requests.get("list", []);
-
                                 switch (edit.toLowerCase()) {
                                     case "accept":
                                         if (!requestslist.find(predicate => predicate.to === target.getName()))
@@ -134,13 +138,13 @@ export default class PluginBase {
                                             time: Date.now()
                                         });
                                         requests.set("list", requestslist);
-                                        await target!.sendMessage(`${line}\n${line}`);
-                                        return await sender.sendMessage(`${line}\n${line}`);
+                                        await target!.sendMessage(`${line}\n§eFriend request from §7${target!.getName()}\n${line}`);
+                                        return await sender.sendMessage(`${line}\n§eYou sent a friend request to ${target!.getName()}! They have 5 minutes to accept it!\n${line}`);
                                     case "deny":
                                         if (!requestslist.find(predicate => predicate.to === target.getName()))
                                             return await sender.sendMessage(`${line}\n§cThat person hasn't invited you to be friends! Try§e /friend ${target!.getName()}\n${line}`);
                                         requests.set("list", requestslist.filter(predicate => predicate.from !== target!.getName()));
-                                        return await sender.sendMessage(` `);
+                                        return await sender.sendMessage(`${line}\n§eDeclined ${target!.getName()}'s friend request!\n${line}`);
                                     case "remove":
                                         if (!friendslist.find(predicate => predicate.name === player))
                                             return await sender.sendMessage(`§c${player} is not on your friends list!`);
@@ -162,13 +166,14 @@ export default class PluginBase {
             const requests = this.api.getConfigBuilder("requests.json");
             const requestslist: any[] = requests.get("list", []);
             requestslist.forEach(async (req) => {
-                if ((Date.now() - req.time) >= 60000) {
+                if ((Date.now() - req.time) >= 300000) {
                     await this.api.getServer().getPlayerManager().getPlayerByExactName(req.from)?.sendMessage(` `);
                     requests.set("list", requestslist.filter(predicate => predicate.name !== req.name));
                 }
             });
         }, 50);
     }
+
     public async onDisable() {
         this.api.getConfigBuilder("requests.json").set("list", []);
     }
