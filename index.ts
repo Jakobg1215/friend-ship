@@ -113,8 +113,8 @@ export default class PluginBase {
                                         return await sender.sendMessage(`§cNo player found with name ${player}`);
                                 }
                                 const line = "§9§l-----------------------------------------------------§r";
-                                //if (sender.getName() === target!?.getName())
-                                //return await sender.sendMessage(`${line}\n§cYou can't add yourself as a friend!\n${line}`);
+                                if (sender.getName() === target!?.getName())
+                                    return await sender.sendMessage(`${line}\n§cYou can't add yourself as a friend!\n${line}`);
                                 const friends = this.api.getConfigBuilder("friends.json");
                                 const friendslist: any[] = friends.get(sender.getXUID(), [{ name: target!?.getName(), xuid: target!?.getXUID() }]);
                                 const requests = this.api.getConfigBuilder("requests.json");
