@@ -18,11 +18,12 @@ export default class PluginBase {
                 event.preventDefault();
                 joiner.getServer().getPlayerManager().getOnlinePlayers().forEach(async Player => {
                     for (const user of this.api.getConfigBuilder("friends.json").get(joiner.getXUID(), [])) {
-                        if (Player.getXUID() === user.xuid) {
-                            if (type === "joined") {
-                                await Player.sendMessage(`§aFriendship > ${joiner.getName()} has joined the server!`);
-                            } else
-                                await Player.sendMessage(`§aFriendship > ${joiner.getName()} has left the server!`);
+                        if (this.api.getConfigBuilder("fsettings.json").get(Player.getXUID(), { notifications: true })) {
+                            if (Player.getXUID() === user.xuid) {
+                                if (type === "joined")
+                                    return await Player.sendMessage(`§aFriendship > ${joiner.getName()} has joined the server!`);
+                                return await Player.sendMessage(`§aFriendship > ${joiner.getName()} has left the server!`);
+                            }
                         }
                     }
                 });
@@ -56,7 +57,7 @@ export default class PluginBase {
                                     const page = 1;
                                     for (const user of friendslist) { // TODO: Make the pages only show 8 players instead of all of them.
                                         const target = sender.getServer().getPlayerManager().getOnlinePlayers().find(player => player.getXUID() === user.xuid);
-                                        target ? players.push(`§7${target.getName()}§a is currently online\n`) : players.push(`§7${user.name}§c is currently online\n`);
+                                        target ? players.push(`§7${target.getName()}§a is currently online\n`) : players.push(`§7${user.name}§c is currently offline\n`);
                                     }
                                     const pageamount = Math.floor(friendslist.length / 9) + 1;
                                     return await sender.sendMessage(`${line}\n                  §6Friends (Page ${page} of ${pageamount})§r\n${players.join("")}${line}`);
@@ -66,6 +67,7 @@ export default class PluginBase {
                                     commandlist.push("§e/f add Player§7 - §bAdd a player as a friend§r\n");
                                     commandlist.push("§e/f deny Player§7 - §bDecline a friend request§r\n");
                                     commandlist.push("§e/f help§7 - §bPrints all available friend commands.\n");
+                                    commandlist.push("§e/f list (page)§7 - §bList your friends\n");
                                     commandlist.push("§e/f notifications§7 - §bToggle friend join/leave notifications\n");
                                     commandlist.push("§e/f remove Player§7 - §bRemove a player from your friends§r");
                                     return await sender.sendMessage(`${line}\n${commandlist.join("")}\n${line}`);
@@ -81,12 +83,13 @@ export default class PluginBase {
                                         return await sender.sendMessage(`${line}\n§eEnabled friend join/leave notifications!\n${line}`);
                                     }
                                 default:
-                                    let target: Player;
+                                    const getTarget: Player[] = [];
                                     try {
-                                        target = this.api.getServer().getPlayerManager().getPlayerByExactName(edit);
+                                        getTarget.push(this.api.getServer().getPlayerManager().getPlayerByExactName(edit));
                                     } catch (error) {
                                         return await sender.sendMessage(`§cNo player found with name ${edit}`);
                                     }
+                                    const target = getTarget[0];
                                     const requests = this.api.getConfigBuilder("requests.json");
                                     const requestslist: any[] = requests.get("list", []);
                                     const friend = this.api.getConfigBuilder("friends.json");
@@ -105,13 +108,14 @@ export default class PluginBase {
                                     return await sender.sendMessage("§cThis command can only be used by a player!");
                                 const edit = context.getArgument("edit");
                                 const player = context.getArgument("player");
-                                let target: Player;
+                                const getTarget: Player[] = [];
                                 try {
-                                    target = this.api.getServer().getPlayerManager().getPlayerByExactName(player);
+                                    getTarget.push(this.api.getServer().getPlayerManager().getPlayerByExactName(player));
                                 } catch (error) {
                                     if (edit !== "remove")
                                         return await sender.sendMessage(`§cNo player found with name ${player}`);
                                 }
+                                const target = getTarget[0];
                                 const line = "§9§l-----------------------------------------------------§r";
                                 if (sender.getName() === target!?.getName())
                                     return await sender.sendMessage(`${line}\n§cYou can't add yourself as a friend!\n${line}`);
@@ -163,11 +167,13 @@ export default class PluginBase {
             execute: async (sender: Player, args: any[]) => { }
         });
         setInterval(() => {
+            const line = "§9§l-----------------------------------------------------§r";
             const requests = this.api.getConfigBuilder("requests.json");
             const requestslist: any[] = requests.get("list", []);
             requestslist.forEach(async (req) => {
                 if ((Date.now() - req.time) >= 300000) {
-                    await this.api.getServer().getPlayerManager().getPlayerByExactName(req.from)?.sendMessage(` `);
+                    await this.api.getServer().getPlayerManager().getPlayerByExactName(req.from)?.sendMessage(`${line}\n§eYour friend request to ${req.to} has expired.\n${line}`);
+                    await this.api.getServer().getPlayerManager().getPlayerByExactName(req.to)?.sendMessage(`${line}\n§eYour friend request from ${req.from}has expired.\n${line}`);
                     requests.set("list", requestslist.filter(predicate => predicate.name !== req.name));
                 }
             });

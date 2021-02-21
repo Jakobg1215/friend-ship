@@ -1,6 +1,6 @@
 {
     "name": "friend-ship",
-    "version": "1.3.0",
+    "version": "1.3.2",
     "description": "A plugin for JSPrismarine to have friends based on Hypixel's friends system.",
     "main": "./dist/index.js",
     "scripts": {
